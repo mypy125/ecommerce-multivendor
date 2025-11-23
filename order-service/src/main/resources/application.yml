@@ -61,3 +61,7 @@ resilience4j:
       productService:
         max-attempts: 3
         wait-duration: 500ms
+
+internal:
+  auth:
+    token: ${INTERNAL_SERVICE_TOKEN}

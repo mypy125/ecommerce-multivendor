@@ -11,8 +11,9 @@ public interface ProductService {
     Boolean existProductById(UUID productId);
     ProductDto getProductById(UUID productId);
     ProductDto createProduct(CreateProductRequest req, UUID sellerId);
-    void deleteProduct(UUID productId);
+    Boolean deleteProduct(UUID productId);
     ProductDto updateProduct(UUID productId, ProductDto product);
+    ProductDto updateProductQuantity(UUID productId, Integer quantity);
     ProductDto findProductById(UUID productId);
     List<ProductDto> searchProduct(String query);
     Page<ProductDto> getAllProducts(String category,

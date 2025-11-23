@@ -40,12 +40,17 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    public void deleteProduct(UUID productId) {
-
+    public Boolean deleteProduct(UUID productId) {
+        return false;
     }
 
     @Override
     public ProductDto updateProduct(UUID productId, ProductDto product) {
+        return null;
+    }
+
+    @Override
+    public ProductDto updateProductQuantity(UUID productId, Integer quantity) {
         return null;
     }
 

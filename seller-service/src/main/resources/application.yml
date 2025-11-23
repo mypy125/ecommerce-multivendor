@@ -126,3 +126,7 @@ product:
 order:
   service:
     url: ${ORDER_SERVICE_URL}
+
+internal:
+  auth:
+    token: ${INTERNAL_SERVICE_TOKEN}

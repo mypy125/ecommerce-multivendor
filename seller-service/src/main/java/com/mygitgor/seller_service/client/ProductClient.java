@@ -11,11 +11,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Component
@@ -26,88 +26,100 @@ public class ProductClient {
     @Value("${product.service.url:http://localhost:8086/api/products}")
     private String productServiceUrl;
 
+    @Value("${internal.auth.token}")
+    private String internalToken;
+
     @CircuitBreaker(name = "productService", fallbackMethod = "getProductBySellerIdFallback")
     @Retry(name = "productService", fallbackMethod = "getProductBySellerIdFallback")
     @RateLimiter(name = "productService")
     public List<ProductDto> getProductBySellerId(String sellerId){
-        try {
-            String url = productServiceUrl + "/seller/" + sellerId;
-            ResponseEntity<ProductDto[]> response = restTemplate.getForEntity(url, ProductDto[].class);
-            log.debug("Retrieved products for seller: {}", sellerId);
-            return Arrays.asList(Objects.requireNonNull(response.getBody()));
-        } catch (Exception e) {
-            log.error("Error retrieving products for seller {}: {}", sellerId, e.getMessage());
-            throw new RuntimeException("Failed to retrieve seller products: " + e.getMessage());
-        }
+        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+                .path("/seller/{sellerId}")
+                .buildAndExpand(sellerId)
+                .toUriString();
+
+        ResponseEntity<ProductDto[]> response = restTemplate.exchange(
+                url,HttpMethod.GET, createHttpEntity(null), ProductDto[].class
+        );
+
+        log.debug("Retrieved products for seller: {}", sellerId);
+        return response.getBody() != null ? Arrays.asList(response.getBody()) : Collections.emptyList();
     }
 
     @CircuitBreaker(name = "productService", fallbackMethod = "createProductFallback")
     @Retry(name = "productService", fallbackMethod = "createProductFallback")
     public ProductDto createProduct(CreateProductRequest request, String sellerId){
-        try {
-            String url = productServiceUrl;
+        String url = productServiceUrl;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Internal-Service-Auth", internalToken);
+        headers.set("X-Seller-Id", sellerId);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Seller-Id", sellerId);
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<CreateProductRequest> requestEntity = new HttpEntity<>(request, headers);
 
-            HttpEntity<CreateProductRequest> requestEntity = new HttpEntity<>(request, headers);
+        ResponseEntity<ProductDto> response = restTemplate.exchange(
+                url, HttpMethod.POST, requestEntity, ProductDto.class
+        );
 
-            ResponseEntity<ProductDto> response = restTemplate.postForEntity(url, requestEntity, ProductDto.class);
-            log.info("Created product for seller: {}", sellerId);
-            return response.getBody();
-        } catch (Exception e) {
-            log.error("Error creating product for seller {}: {}", sellerId, e.getMessage());
-            throw new RuntimeException("Failed to create product: " + e.getMessage());
-        }
+        log.info("Created product for seller: {}", sellerId);
+        return response.getBody();
     }
 
     @CircuitBreaker(name = "productService", fallbackMethod = "updateProductFallback")
     @Retry(name = "productService", fallbackMethod = "updateProductFallback")
     public ProductDto updateProduct(String productId, ProductDto productDto){
-        try {
-            String url = productServiceUrl + "/" + productId;
+        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+                .path("/{productId}")
+                .buildAndExpand(productId)
+                .toUriString();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<ProductDto> requestEntity = new HttpEntity<>(productDto, headers);
+        ResponseEntity<ProductDto> response = restTemplate.exchange(
+                url, HttpMethod.PUT, createHttpEntity(productDto), ProductDto.class
+        );
 
-            ResponseEntity<ProductDto> response = restTemplate.exchange(
-                    url, HttpMethod.PUT, requestEntity, ProductDto.class);
-            log.debug("Updated product: {}", productId);
-            return response.getBody();
-        } catch (Exception e) {
-            log.error("Error updating product {}: {}", productId, e.getMessage());
-            throw new RuntimeException("Failed to update product: " + e.getMessage());
-        }
+        log.debug("Updated product: {}", productId);
+        return response.getBody();
     }
 
     @CircuitBreaker(name = "productService", fallbackMethod = "deleteProductFallback")
     @Retry(name = "productService", fallbackMethod = "deleteProductFallback")
     public Boolean deleteProduct(String productId) {
-        try {
-            String url = productServiceUrl + "/" + productId;
-            restTemplate.delete(url);
-            log.info("Deleted product: {}", productId);
-            return true;
-        } catch (Exception e) {
-            log.error("Error deleting product {}: {}", productId, e.getMessage());
-            throw new RuntimeException("Failed to delete product: " + e.getMessage());
-        }
+        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+                .path("/{productId}")
+                .buildAndExpand(productId)
+                .toUriString();
+
+        ResponseEntity<Void> response = restTemplate.exchange(
+                url,
+                HttpMethod.DELETE,
+                createHttpEntity(null),
+                Void.class
+        );
+        log.info("Deleted product: {}", productId);
+        return response.getStatusCode().is2xxSuccessful();
+
     }
 
     @CircuitBreaker(name = "productService", fallbackMethod = "getProductByIdFallback")
     @Retry(name = "productService", fallbackMethod = "getProductByIdFallback")
     public ProductDto getProductById(String productId) {
-        try {
-            String url = productServiceUrl + "/" + productId;
-            ResponseEntity<ProductDto> response = restTemplate.getForEntity(url, ProductDto.class);
-            log.debug("Retrieved product: {}", productId);
-            return response.getBody();
-        } catch (Exception e) {
-            log.error("Error retrieving product {}: {}", productId, e.getMessage());
-            throw new RuntimeException("Failed to retrieve product: " + e.getMessage());
-        }
+        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+                .path("/{productId}")
+                .buildAndExpand(productId)
+                .toUriString();
+
+        ResponseEntity<ProductDto> response = restTemplate.exchange(
+                url,HttpMethod.GET, createHttpEntity(null), ProductDto.class
+        );
+        log.debug("Retrieved product: {}", productId);
+        return response.getBody();
+    }
+
+    private <T> HttpEntity<T> createHttpEntity(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Internal-Service-Auth", internalToken);
+        return new HttpEntity<>(body, headers);
     }
 
     private List<ProductDto> getProductBySellerIdFallback(String sellerId, Exception e) {
