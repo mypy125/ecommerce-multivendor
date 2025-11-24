@@ -33,7 +33,7 @@ public class ProductClient {
     @Retry(name = "productService", fallbackMethod = "getProductBySellerIdFallback")
     @RateLimiter(name = "productService")
     public List<ProductDto> getProductBySellerId(String sellerId){
-        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(productServiceUrl)
                 .path("/seller/{sellerId}")
                 .buildAndExpand(sellerId)
                 .toUriString();
@@ -68,7 +68,7 @@ public class ProductClient {
     @CircuitBreaker(name = "productService", fallbackMethod = "updateProductFallback")
     @Retry(name = "productService", fallbackMethod = "updateProductFallback")
     public ProductDto updateProduct(String productId, ProductDto productDto){
-        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(productServiceUrl)
                 .path("/{productId}")
                 .buildAndExpand(productId)
                 .toUriString();
@@ -84,7 +84,7 @@ public class ProductClient {
     @CircuitBreaker(name = "productService", fallbackMethod = "deleteProductFallback")
     @Retry(name = "productService", fallbackMethod = "deleteProductFallback")
     public Boolean deleteProduct(String productId) {
-        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(productServiceUrl)
                 .path("/{productId}")
                 .buildAndExpand(productId)
                 .toUriString();
@@ -103,7 +103,7 @@ public class ProductClient {
     @CircuitBreaker(name = "productService", fallbackMethod = "getProductByIdFallback")
     @Retry(name = "productService", fallbackMethod = "getProductByIdFallback")
     public ProductDto getProductById(String productId) {
-        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(productServiceUrl)
                 .path("/{productId}")
                 .buildAndExpand(productId)
                 .toUriString();

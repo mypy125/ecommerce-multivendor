@@ -62,6 +62,16 @@ resilience4j:
         max-attempts: 3
         wait-duration: 500ms
 
+cart:
+  service:
+    url: ${CART_SERVICE_URL}
+product:
+  service:
+    url: ${PRODUCT_SERVICE_URL}
+payment:
+  service:
+    url: ${PAYMENT_SERVICE_URL}
+
 internal:
   auth:
     token: ${INTERNAL_SERVICE_TOKEN}

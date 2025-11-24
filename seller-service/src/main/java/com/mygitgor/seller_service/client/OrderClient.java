@@ -32,7 +32,7 @@ public class OrderClient {
     @Retry(name = "orderService", fallbackMethod = "getSellerOrdersFallback")
     @RateLimiter(name = "orderService")
     public List<OrderDto> getSellerOrders(String sellerId) {
-        String url = UriComponentsBuilder.fromHttpUrl(orderServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(orderServiceUrl)
                 .path("/seller/{sellerId}")
                 .buildAndExpand(sellerId)
                 .toUriString();
@@ -47,7 +47,7 @@ public class OrderClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "updateOrderStatusFallback")
     @Retry(name = "orderService", fallbackMethod = "updateOrderStatusFallback")
     public Boolean updateOrderStatus(String orderId, OrderStatus orderStatus) {
-        String url = UriComponentsBuilder.fromHttpUrl(orderServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(orderServiceUrl)
                 .path("/{orderId}/status")
                 .buildAndExpand(orderId)
                 .toUriString();
@@ -69,7 +69,7 @@ public class OrderClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "getOrderByIdFallback")
     @Retry(name = "orderService", fallbackMethod = "getOrderByIdFallback")
     public OrderDto getOrderById(String orderId) {
-        String url = UriComponentsBuilder.fromHttpUrl(orderServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(orderServiceUrl)
                 .path("/{orderId}")
                 .buildAndExpand(orderId)
                 .toUriString();
@@ -84,7 +84,7 @@ public class OrderClient {
     @CircuitBreaker(name = "orderService", fallbackMethod = "getUserOrdersFallback")
     @Retry(name = "orderService", fallbackMethod = "getUserOrdersFallback")
     public List<OrderDto> getUserOrders(String userId) {
-        String url = UriComponentsBuilder.fromHttpUrl(orderServiceUrl)
+        String url = UriComponentsBuilder.fromUriString(orderServiceUrl)
                 .path("/user/{userId}")
                 .buildAndExpand(userId)
                 .toUriString();
