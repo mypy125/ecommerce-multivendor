@@ -1,10 +1,8 @@
 server:
   port: 8081
-
 dotenv:
   enabled: true
   override: true
-
 spring:
   application:
     name: auth-service
@@ -14,7 +12,6 @@ spring:
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update

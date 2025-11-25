@@ -12,7 +12,6 @@ spring:
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -47,20 +46,96 @@ spring:
           max-interval: 10000ms
 
 resilience4j:
+  bulkhead:
+    instances:
+      productService:
+        max-concurrent-calls: 20
+        max-wait-duration: 100ms
+      paymentService:
+        max-concurrent-calls: 5
+        max-wait-duration: 1s
   circuitbreaker:
     instances:
+      cartService:
+        register-health-indicator: true
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 30s
+        slow-call-rate-threshold: 30
+        slow-call-duration-threshold: 2s
+      paymentService:
+        register-health-indicator: true
+        sliding-window-size: 50
+        minimum-number-of-calls: 20
+        failure-rate-threshold: 40
+        wait-duration-in-open-state: 60s
+        slow-call-rate-threshold: 20
+        slow-call-duration-threshold: 3s
       productService:
         register-health-indicator: true
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
+        sliding-window-size: 100
+        minimum-number-of-calls: 30
         permitted-number-of-calls-in-half-open-state: 3
         wait-duration-in-open-state: 10s
-        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 1s
+        failure-rate-threshold: 70
   retry:
     instances:
-      productService:
+      cartService:
         max-attempts: 3
+        wait-duration: 1s
+      paymentService:
+        max-attempts: 2
+        wait-duration: 2s
+        retry-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.ConnectException
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException.*
+      productService:
+        max-attempts: 4
         wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  ratelimiter:
+    instances:
+      cartService:
+        limit-for-period: 100
+        limit-refresh-period: 1s
+      paymentService:
+        limit-for-period: 30
+        limit-refresh-period: 1s
+        timeout-duration: 5s
+      productService:
+        limit-for-period: 200
+        limit-refresh-period: 1s
+  metrics:
+    enabled: true
+    circuitbreaker:
+      enabled: true
+    retry:
+      enabled: true
+    ratelimiter:
+      enabled: true
+    bulkhead:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,circuitbreakers,retries,ratelimiters,bulkheads
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
 
 cart:
   service:

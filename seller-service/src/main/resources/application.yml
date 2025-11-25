@@ -9,7 +9,6 @@ spring:
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
     jpa:
       hibernate:
         ddl-auto: update
@@ -42,14 +41,20 @@ spring:
             multiplier: 2
             max-attempts: 3
             max-interval: 10000ms
-
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-
 resilience4j:
+  bulkhead:
+    instances:
+      productService:
+        max-concurrent-calls: 10
+        max-wait-duration: 5ms
+      orderService:
+        max-concurrent-calls: 5
+        max-wait-duration: 10ms
   circuitbreaker:
     instances:
       productService:
@@ -65,6 +70,8 @@ resilience4j:
           - java.io.IOException
           - java.util.concurrent.TimeoutException
           - org.springframework.web.client.ResourceAccessException
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
       orderService:
         register-health-indicator: true
         sliding-window-size: 10
@@ -78,6 +85,8 @@ resilience4j:
           - java.io.IOException
           - java.util.concurrent.TimeoutException
           - org.springframework.web.client.ResourceAccessException
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
   retry:
     instances:
       productService:
@@ -94,7 +103,6 @@ resilience4j:
           - org.springframework.web.client.HttpServerErrorException
           - java.io.IOException
           - java.util.concurrent.TimeoutException
-
   ratelimiter:
     instances:
       productService:
@@ -109,7 +117,6 @@ resilience4j:
         timeout-duration: 0
         allow-health-indicator-to-fail: false
         register-health-indicator: true
-
     timelimiter:
       instances:
         productService:
@@ -118,7 +125,6 @@ resilience4j:
         orderService:
           timeout-duration: 10s
           cancel-running-future: true
-
 product:
   service:
     url: ${PRODUCT_SERVICE_URL}
@@ -130,3 +136,7 @@ order:
 internal:
   auth:
     token: ${INTERNAL_SERVICE_TOKEN}
+
+logging:
+  level:
+    io.github.resilience4j: DEBUG
